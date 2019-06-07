@@ -166,10 +166,10 @@ typedef union _RFLAGS
 #define DPL_USER                3
 #define DPL_SYSTEM              0
 
-typedef void(*PFUNC)(IN ULONG ProcessorID, IN PEPTP EPTP);
+typedef void(*PFUNC)(IN ULONG ProcessorID);
 typedef void(*PFUNCTerminate)(void);
 
-BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine);
+BOOLEAN run_on_processor(ULONG num, PFUNC routine);
 int virtualize_cores();
 void terminate_vmx();
 BOOLEAN terminate_on_processor(ULONG processor_num);

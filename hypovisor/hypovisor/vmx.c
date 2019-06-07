@@ -17,7 +17,7 @@ void enable_vmx_in_cr4();
 
 PVirtualMachineState g_vm_state;
 
-BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine)
+BOOLEAN run_on_processor(ULONG num, PFUNC routine)
 {
 	KIRQL old_irql;
 
@@ -25,7 +25,7 @@ BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine)
 
 	old_irql = KeRaiseIrqlToDpcLevel();
 
-	routine(num, eptp); // Invoke callback routine
+	routine(num); // Invoke callback routine
 
 	KeLowerIrql(old_irql);
 
@@ -37,12 +37,11 @@ BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine)
 
 int virtualize_cores() {
 	// TODO: check for ept support
-	PEPTP eptp = create_ept_mapping();
 	initialize_vmx();
 
 	ULONG processor_count = KeQueryActiveProcessorCount(0);
 	for (ULONG i = 0; i < processor_count; ++i) {
-		run_on_processor(i, eptp, VMXSaveState); // VmxSaveState will also virtualize the core.
+		run_on_processor(i, VMXSaveState); // VmxSaveState will also virtualize the core.
 	}
 
 	return STATUS_SUCCESS;
@@ -162,10 +161,10 @@ int is_vmx_supported()
 }
 
 
-void VirtualizeCurrentSystem(int processor_id, PEPTP eptp, PVOID guest_stack);
+void VirtualizeCurrentSystem(int processor_id, PVOID guest_stack);
 #pragma alloc_text(PAGE, VirtualizeCurrentSystem)
 
-void VirtualizeCurrentSystem(int processor_id, PEPTP eptp, PVOID guest_stack) {
+void VirtualizeCurrentSystem(int processor_id, PVOID guest_stack) {
 
 	DbgPrint("\n======================== Virtualizing Current System =============================\n");
 
@@ -209,7 +208,7 @@ void VirtualizeCurrentSystem(int processor_id, PEPTP eptp, PVOID guest_stack) {
 	}
 
 	DbgPrint("[*] Setting up VMCS for current system.\n");
-	setup_vmcs_for_current_guest(&g_vm_state[processor_id], eptp, guest_stack);
+	setup_vmcs_for_current_guest(&g_vm_state[processor_id], guest_stack);
 
 
 	// Change this hook (detect modification of MSRs using RDMSR & WRMSR)
@@ -336,11 +335,34 @@ BOOLEAN SetTargetControls(UINT64 CR3, UINT64 Index) {
 }
 
 
-BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, IN PEPTP eptp, PVOID guest_stack) {
+BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, PVOID guest_stack) {
 	BOOLEAN Status = FALSE;
+	VMX_EPTP vmxEptp = { 0 };
+
+	DbgPrint("[*] Initializing MTRR\n");
+	vmx_mtrr_initialize(vm_state);
+	DbgPrint("[*] Initializing EPT\n");
+	vmx_ept_initialize(vm_state);
 
 	// Load Extended Page Table Pointer
-	__vmx_vmwrite(EPT_POINTER, eptp->All);
+	//
+	// Enable EPT features if supported
+	//
+	if (1) // TODO: check for EPT support and enter only if supported
+	{
+		//
+		// Configure the EPTP
+		//
+		vmxEptp.AsUlonglong = 0;
+		vmxEptp.PageWalkLength = 3;
+		vmxEptp.Type = MTRR_TYPE_WB;
+		vmxEptp.PageFrameNumber = virtual_to_physical(vm_state->Epml4) / PAGE_SIZE;
+
+		//
+		// Load EPT Root Pointer
+		//
+		__vmx_vmwrite(EPT_POINTER, vmxEptp.AsUlonglong);
+	}
 
 	ULONG64 gdt_base = 0;
 	SEGMENT_SELECTOR segment_selector = { 0 };

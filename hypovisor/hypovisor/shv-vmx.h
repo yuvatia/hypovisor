@@ -21,8 +21,13 @@ Kernel mode only.
 --*/
 
 #pragma once
+#include "common.h"
+
 #pragma warning(disable:4201)
 #pragma warning(disable:4214)
+
+#define _1GB                        (1 * 1024 * 1024 * 1024)
+#define _2MB                        (2 * 1024 * 1024)
 
 #define DPL_USER                3
 #define DPL_SYSTEM              0
@@ -257,123 +262,6 @@ C_ASSERT(sizeof(MTRR_VARIABLE_MASK) == sizeof(UINT64));
 
 #define GUEST_ACTIVITY_ACTIVE           0
 #define GUEST_ACTIVITY_HLT              1
-
-typedef struct _VMX_EPTP
-{
-	union
-	{
-		struct
-		{
-			UINT64 Type : 3;
-			UINT64 PageWalkLength : 3;
-			UINT64 EnableAccessAndDirtyFlags : 1;
-			UINT64 Reserved : 5;
-			UINT64 PageFrameNumber : 36;
-			UINT64 ReservedHigh : 16;
-		};
-		UINT64 AsUlonglong;
-	};
-} VMX_EPTP, *PVMX_EPTP;
-
-typedef struct _VMX_EPML4E
-{
-	union
-	{
-		struct
-		{
-			UINT64 Read : 1;
-			UINT64 Write : 1;
-			UINT64 Execute : 1;
-			UINT64 Reserved : 5;
-			UINT64 Accessed : 1;
-			UINT64 SoftwareUse : 1;
-			UINT64 UserModeExecute : 1;
-			UINT64 SoftwareUse2 : 1;
-			UINT64 PageFrameNumber : 36;
-			UINT64 ReservedHigh : 4;
-			UINT64 SoftwareUseHigh : 12;
-		};
-		UINT64 AsUlonglong;
-	};
-} VMX_EPML4E, *PVMX_EPML4E;
-
-typedef struct _VMX_HUGE_PDPTE
-{
-	union
-	{
-		struct
-		{
-			UINT64 Read : 1;
-			UINT64 Write : 1;
-			UINT64 Execute : 1;
-			UINT64 Type : 3;
-			UINT64 IgnorePat : 1;
-			UINT64 Large : 1;
-			UINT64 Accessed : 1;
-			UINT64 Dirty : 1;
-			UINT64 UserModeExecute : 1;
-			UINT64 SoftwareUse : 1;
-			UINT64 Reserved : 18;
-			UINT64 PageFrameNumber : 18;
-			UINT64 ReservedHigh : 4;
-			UINT64 SoftwareUseHigh : 11;
-			UINT64 SupressVme : 1;
-		};
-		UINT64 AsUlonglong;
-	};
-} VMX_HUGE_PDPTE, *PVMX_HUGE_PDPTE;
-
-typedef struct _VMX_PDPTE
-{
-	union
-	{
-		struct
-		{
-			UINT64 Read : 1;
-			UINT64 Write : 1;
-			UINT64 Execute : 1;
-			UINT64 Reserved : 5;
-			UINT64 Accessed : 1;
-			UINT64 SoftwareUse : 1;
-			UINT64 UserModeExecute : 1;
-			UINT64 SoftwareUse2 : 1;
-			UINT64 PageFrameNumber : 36;
-			UINT64 ReservedHigh : 4;
-			UINT64 SoftwareUseHigh : 12;
-		};
-		UINT64 AsUlonglong;
-	};
-} VMX_PDPTE, *PVMX_PDPTE;
-
-typedef struct _VMX_LARGE_PDE
-{
-	union
-	{
-		struct
-		{
-			UINT64 Read : 1;
-			UINT64 Write : 1;
-			UINT64 Execute : 1;
-			UINT64 Type : 3;
-			UINT64 IgnorePat : 1;
-			UINT64 Large : 1;
-			UINT64 Accessed : 1;
-			UINT64 Dirty : 1;
-			UINT64 UserModeExecute : 1;
-			UINT64 SoftwareUse : 1;
-			UINT64 Reserved : 9;
-			UINT64 PageFrameNumber : 27;
-			UINT64 ReservedHigh : 4;
-			UINT64 SoftwareUseHigh : 11;
-			UINT64 SupressVme : 1;
-		};
-		UINT64 AsUlonglong;
-	};
-} VMX_LARGE_PDE, *PVMX_LARGE_PDE;
-
-static_assert(sizeof(VMX_EPTP) == sizeof(UINT64), "EPTP Size Mismatch");
-static_assert(sizeof(VMX_EPML4E) == sizeof(UINT64), "EPML4E Size Mismatch");
-static_assert(sizeof(VMX_PDPTE) == sizeof(UINT64), "EPDPTE Size Mismatch");
 
 #define PML4E_ENTRY_COUNT   512
 #define PDPTE_ENTRY_COUNT   512

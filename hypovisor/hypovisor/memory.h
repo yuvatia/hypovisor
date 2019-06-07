@@ -1,4 +1,5 @@
 #pragma once
+#include "vmx.h"
 
 #define MAXIMUM_ADDRESS	0xffffffffffffffff
 #define REGION_SIZE PAGE_SIZE

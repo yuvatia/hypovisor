@@ -83,6 +83,9 @@
     <ClInclude Include="intel-iommu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="shv-vmx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="savestate.s" />

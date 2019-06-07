@@ -182,6 +182,7 @@
     <ClInclude Include="memory.h" />
     <ClInclude Include="msr.h" />
     <ClInclude Include="regs.h" />
+    <ClInclude Include="shv-vmx.h" />
     <ClInclude Include="stdint.h" />
     <ClInclude Include="vmm.h" />
     <ClInclude Include="vmx.h" />
