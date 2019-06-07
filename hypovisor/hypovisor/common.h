@@ -3,7 +3,9 @@
 #include <ntddk.h>
 #include <wdm.h>
 #include <intrin.h>
+#include "stdint.h"
 #include "ept.h"
+
 
 #pragma warning(disable: 4201)
 

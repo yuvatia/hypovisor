@@ -20,6 +20,12 @@ UINT64 physical_to_virtual(UINT64 pa)
 	return(UINT64)MmGetVirtualForPhysical(phys_addr);
 }
 
+UINT64 map_physical_memory(UINT64 pa, UINT64 size)
+{
+	PHYSICAL_ADDRESS phys_addr;
+	phys_addr.QuadPart = pa;
+	return (UINT64)MmMapIoSpace(phys_addr, size, MmNonCached);
+}
 
 BOOLEAN allocate_region(IN PVirtualMachineState vm_state, REGION_TYPE type)
 {	

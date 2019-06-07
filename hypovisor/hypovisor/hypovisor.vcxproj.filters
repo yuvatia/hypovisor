@@ -39,6 +39,12 @@
     <ClCompile Include="vmm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ept.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vtd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vmx.h">
@@ -63,6 +69,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vmm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vtd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="acpi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="intel-iommu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

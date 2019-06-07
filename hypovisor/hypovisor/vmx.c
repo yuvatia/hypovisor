@@ -36,19 +36,13 @@ BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine)
 
 
 int virtualize_cores() {
-	/*
-	We need to do the following:
-	- Enable VMX
-	- Prepare vmxon region, execute vmxon
-	- Prepare vmcs region, execute vmptrld, including preparing vmm stack & vmexit handler, and ept structures
-	- Initialize vmcs region guest/host/control areas, execute vmlaunch
-	*/
-	
+	// TODO: check for ept support
+	PEPTP eptp = create_ept_mapping();
 	initialize_vmx();
 
 	ULONG processor_count = KeQueryActiveProcessorCount(0);
 	for (ULONG i = 0; i < processor_count; ++i) {
-		run_on_processor(i, 0, VMXSaveState); // VmxSaveState will also virtualize the core.
+		run_on_processor(i, eptp, VMXSaveState); // VmxSaveState will also virtualize the core.
 	}
 
 	return STATUS_SUCCESS;
@@ -343,12 +337,10 @@ BOOLEAN SetTargetControls(UINT64 CR3, UINT64 Index) {
 
 
 BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, IN PEPTP eptp, PVOID guest_stack) {
-	UNREFERENCED_PARAMETER(eptp);
-	
 	BOOLEAN Status = FALSE;
 
 	// Load Extended Page Table Pointer
-	//__vmx_vmwrite(EPT_POINTER, EPTP->All);
+	__vmx_vmwrite(EPT_POINTER, eptp->All);
 
 	ULONG64 gdt_base = 0;
 	SEGMENT_SELECTOR segment_selector = { 0 };
@@ -399,10 +391,10 @@ BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, IN PEPTP 
 	__vmx_vmwrite(GUEST_GS_BASE, __readmsr(MSR_GS_BASE));
 
 	DbgPrint("[*] MSR_IA32_VMX_PROCBASED_CTLS : 0x%llx\n", AdjustControls(CPU_BASED_ACTIVATE_MSR_BITMAP | CPU_BASED_ACTIVATE_SECONDARY_CONTROLS, MSR_IA32_VMX_PROCBASED_CTLS));
-	DbgPrint("[*] MSR_IA32_VMX_PROCBASED_CTLS2 : 0x%llx\n", AdjustControls(CPU_BASED_CTL2_RDTSCP | CPU_BASED_CTL2_ENABLE_INVPCID | CPU_BASED_CTL2_ENABLE_XSAVE_XRSTORS, MSR_IA32_VMX_PROCBASED_CTLS2));
+	DbgPrint("[*] MSR_IA32_VMX_PROCBASED_CTLS2 : 0x%llx\n", AdjustControls(CPU_BASED_CTL2_ENABLE_EPT | CPU_BASED_CTL2_RDTSCP | CPU_BASED_CTL2_ENABLE_INVPCID | CPU_BASED_CTL2_ENABLE_XSAVE_XRSTORS, MSR_IA32_VMX_PROCBASED_CTLS2));
 
 	__vmx_vmwrite(CPU_BASED_VM_EXEC_CONTROL, AdjustControls(CPU_BASED_ACTIVATE_MSR_BITMAP | CPU_BASED_ACTIVATE_SECONDARY_CONTROLS, MSR_IA32_VMX_PROCBASED_CTLS));
-	__vmx_vmwrite(SECONDARY_VM_EXEC_CONTROL, AdjustControls(CPU_BASED_CTL2_RDTSCP | CPU_BASED_CTL2_ENABLE_INVPCID | CPU_BASED_CTL2_ENABLE_XSAVE_XRSTORS, MSR_IA32_VMX_PROCBASED_CTLS2));
+	__vmx_vmwrite(SECONDARY_VM_EXEC_CONTROL, AdjustControls(CPU_BASED_CTL2_ENABLE_EPT | CPU_BASED_CTL2_RDTSCP | CPU_BASED_CTL2_ENABLE_INVPCID | CPU_BASED_CTL2_ENABLE_XSAVE_XRSTORS, MSR_IA32_VMX_PROCBASED_CTLS2));
 
 
 	__vmx_vmwrite(PIN_BASED_VM_EXEC_CONTROL, AdjustControls(0, MSR_IA32_VMX_PINBASED_CTLS));

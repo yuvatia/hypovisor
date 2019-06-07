@@ -140,3 +140,6 @@ typedef struct INVEPT_DESC
 	EPTP ept_pointer;
 	UINT64  reserved;
 }INVEPT_DESC, *PINVEPT_DESC;
+
+
+PEPTP create_ept_mapping();
