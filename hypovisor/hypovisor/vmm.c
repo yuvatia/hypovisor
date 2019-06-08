@@ -6,6 +6,9 @@
 ULONG64 g_guest_rip;
 ULONG64 g_guest_rsp;
 
+void handle_ept_violation(PGUEST_REGS guest_regs) {
+	UNREFERENCED_PARAMETER(guest_regs);
+}
 
 ULONG64 get_next_instruction() {
 	ULONG64 resume_rip = 0;
@@ -299,6 +302,12 @@ BOOLEAN main_vmexit_handler(PGUEST_REGS guest_regs)
 	}
 	case EXIT_REASON_VMCALL:
 	{
+		DbgBreakPoint();
+		break;
+	}
+	case EXIT_REASON_EPT_VIOLATION:
+	{
+		handle_ept_violation(guest_regs);
 		DbgBreakPoint();
 		break;
 	}

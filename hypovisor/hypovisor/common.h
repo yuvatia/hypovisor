@@ -3,7 +3,9 @@
 #include <ntddk.h>
 #include <wdm.h>
 #include <intrin.h>
+#include "stdint.h"
 #include "ept.h"
+
 
 #pragma warning(disable: 4201)
 
@@ -164,7 +166,7 @@ typedef union _RFLAGS
 #define DPL_USER                3
 #define DPL_SYSTEM              0
 
-typedef void(*PFUNC)(IN ULONG ProcessorID, IN PEPTP EPTP);
+typedef void(*PFUNC)(IN ULONG ProcessorID, PEPTP eptp);
 typedef void(*PFUNCTerminate)(void);
 
 BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine);

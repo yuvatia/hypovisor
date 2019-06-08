@@ -1,8 +1,7 @@
 #pragma once
 #include <wdm.h>
 #include <ntddk.h>
-#include "EPT.h"
-#include "common.h"
+#include "shv-vmx.h"
 
 #pragma warning( disable : 4214) // Ignore C4214
 #pragma warning(disable: 4201)
@@ -13,6 +12,14 @@ typedef enum _REGION_TYPE
 	VMCS
 } REGION_TYPE;
 
+typedef struct _SHV_MTRR_RANGE
+{
+	UINT32 Enabled;
+	UINT32 Type;
+	UINT64 PhysicalAddressMin;
+	UINT64 PhysicalAddressMax;
+} SHV_MTRR_RANGE, *PSHV_MTRR_RANGE;
+
 typedef struct _VirtualMachineState
 {
 	UINT64 VMXON_REGION;                        // VMXON region
@@ -21,6 +28,10 @@ typedef struct _VirtualMachineState
 	UINT64 VMM_Stack;							// Stack for VMM in VM-Exit State
 	UINT64 MSRBitMap;							// MSRBitMap Virtual Address
 	UINT64 MSRBitMapPhysical;					// MSRBitMap Physical Address
+	SHV_MTRR_RANGE MtrrData[16];
+	DECLSPEC_ALIGN(PAGE_SIZE) VMX_EPML4E Epml4[PML4E_ENTRY_COUNT];
+	DECLSPEC_ALIGN(PAGE_SIZE) VMX_PDPTE Epdpt[PDPTE_ENTRY_COUNT];
+	DECLSPEC_ALIGN(PAGE_SIZE) VMX_LARGE_PDE Epde[PDPTE_ENTRY_COUNT][PDE_ENTRY_COUNT];
 } VirtualMachineState, *PVirtualMachineState;
 
 extern PVirtualMachineState g_vm_state;
@@ -313,10 +324,10 @@ enum VMCS_FIELDS {
 #define VMM_STACK_SIZE      0x8000
 #define RPL_MASK                3
 
-VOID VMXSaveState(IN ULONG ProcessorID, IN PEPTP EPTP);
+VOID VMXSaveState(IN ULONG ProcessorID, PEPTP eptp);
 VOID VMXRestoreState(VOID);
 VOID VMExitHandler(VOID);
 
 BOOLEAN SetMSRBitmap(ULONG64 msr, int processor_id, BOOLEAN read, BOOLEAN write);
-BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vmState, IN PEPTP EPTP, PVOID GuestStack);
+BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vmState, PVOID GuestStack);
 

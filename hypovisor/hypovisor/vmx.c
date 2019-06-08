@@ -36,14 +36,7 @@ BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine)
 
 
 int virtualize_cores() {
-	/*
-	We need to do the following:
-	- Enable VMX
-	- Prepare vmxon region, execute vmxon
-	- Prepare vmcs region, execute vmptrld, including preparing vmm stack & vmexit handler, and ept structures
-	- Initialize vmcs region guest/host/control areas, execute vmlaunch
-	*/
-	
+	// TODO: check for ept support
 	initialize_vmx();
 
 	ULONG processor_count = KeQueryActiveProcessorCount(0);
@@ -172,6 +165,7 @@ void VirtualizeCurrentSystem(int processor_id, PEPTP eptp, PVOID guest_stack);
 #pragma alloc_text(PAGE, VirtualizeCurrentSystem)
 
 void VirtualizeCurrentSystem(int processor_id, PEPTP eptp, PVOID guest_stack) {
+	UNREFERENCED_PARAMETER(eptp);
 
 	DbgPrint("\n======================== Virtualizing Current System =============================\n");
 
@@ -215,7 +209,7 @@ void VirtualizeCurrentSystem(int processor_id, PEPTP eptp, PVOID guest_stack) {
 	}
 
 	DbgPrint("[*] Setting up VMCS for current system.\n");
-	setup_vmcs_for_current_guest(&g_vm_state[processor_id], eptp, guest_stack);
+	setup_vmcs_for_current_guest(&g_vm_state[processor_id], guest_stack);
 
 
 	// Change this hook (detect modification of MSRs using RDMSR & WRMSR)
@@ -342,13 +336,34 @@ BOOLEAN SetTargetControls(UINT64 CR3, UINT64 Index) {
 }
 
 
-BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, IN PEPTP eptp, PVOID guest_stack) {
-	UNREFERENCED_PARAMETER(eptp);
-	
+BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, PVOID guest_stack) {
 	BOOLEAN Status = FALSE;
+	VMX_EPTP vmxEptp = { 0 };
+
+	DbgPrint("[*] Initializing MTRR\n");
+	vmx_mtrr_initialize(vm_state);
+	DbgPrint("[*] Initializing EPT\n");
+	vmx_ept_initialize(vm_state);
 
 	// Load Extended Page Table Pointer
-	//__vmx_vmwrite(EPT_POINTER, EPTP->All);
+	//
+	// Enable EPT features if supported
+	//
+	if (1) // TODO: check for EPT support and enter only if supported
+	{
+		//
+		// Configure the EPTP
+		//
+		vmxEptp.AsUlonglong = 0;
+		vmxEptp.PageWalkLength = 3;
+		vmxEptp.Type = MTRR_TYPE_WB;
+		vmxEptp.PageFrameNumber = virtual_to_physical(vm_state->Epml4) / PAGE_SIZE;
+
+		//
+		// Load EPT Root Pointer
+		//
+		__vmx_vmwrite(EPT_POINTER, vmxEptp.AsUlonglong);
+	}
 
 	ULONG64 gdt_base = 0;
 	SEGMENT_SELECTOR segment_selector = { 0 };
@@ -399,10 +414,10 @@ BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, IN PEPTP 
 	__vmx_vmwrite(GUEST_GS_BASE, __readmsr(MSR_GS_BASE));
 
 	DbgPrint("[*] MSR_IA32_VMX_PROCBASED_CTLS : 0x%llx\n", AdjustControls(CPU_BASED_ACTIVATE_MSR_BITMAP | CPU_BASED_ACTIVATE_SECONDARY_CONTROLS, MSR_IA32_VMX_PROCBASED_CTLS));
-	DbgPrint("[*] MSR_IA32_VMX_PROCBASED_CTLS2 : 0x%llx\n", AdjustControls(CPU_BASED_CTL2_RDTSCP | CPU_BASED_CTL2_ENABLE_INVPCID | CPU_BASED_CTL2_ENABLE_XSAVE_XRSTORS, MSR_IA32_VMX_PROCBASED_CTLS2));
+	DbgPrint("[*] MSR_IA32_VMX_PROCBASED_CTLS2 : 0x%llx\n", AdjustControls(CPU_BASED_CTL2_ENABLE_EPT | CPU_BASED_CTL2_RDTSCP | CPU_BASED_CTL2_ENABLE_INVPCID | CPU_BASED_CTL2_ENABLE_XSAVE_XRSTORS, MSR_IA32_VMX_PROCBASED_CTLS2));
 
 	__vmx_vmwrite(CPU_BASED_VM_EXEC_CONTROL, AdjustControls(CPU_BASED_ACTIVATE_MSR_BITMAP | CPU_BASED_ACTIVATE_SECONDARY_CONTROLS, MSR_IA32_VMX_PROCBASED_CTLS));
-	__vmx_vmwrite(SECONDARY_VM_EXEC_CONTROL, AdjustControls(CPU_BASED_CTL2_RDTSCP | CPU_BASED_CTL2_ENABLE_INVPCID | CPU_BASED_CTL2_ENABLE_XSAVE_XRSTORS, MSR_IA32_VMX_PROCBASED_CTLS2));
+	__vmx_vmwrite(SECONDARY_VM_EXEC_CONTROL, AdjustControls(CPU_BASED_CTL2_ENABLE_EPT | CPU_BASED_CTL2_RDTSCP | CPU_BASED_CTL2_ENABLE_INVPCID | CPU_BASED_CTL2_ENABLE_XSAVE_XRSTORS, MSR_IA32_VMX_PROCBASED_CTLS2));
 
 
 	__vmx_vmwrite(PIN_BASED_VM_EXEC_CONTROL, AdjustControls(0, MSR_IA32_VMX_PINBASED_CTLS));

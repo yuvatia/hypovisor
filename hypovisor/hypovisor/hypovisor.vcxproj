@@ -149,6 +149,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile />
+    <Link>
+      <AdditionalDependencies>Aux_klib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <AdditionalDependencies>Aux_klib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Inf Include="hypovisor.inf" />
@@ -157,21 +165,28 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ept.c" />
     <ClCompile Include="helpers.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="memory.c" />
     <ClCompile Include="vmm.c" />
     <ClCompile Include="vmx.c" />
+    <ClCompile Include="vtd.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="acpi.h" />
+    <ClInclude Include="intel-iommu.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="ept.h" />
     <ClInclude Include="helpers.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="msr.h" />
     <ClInclude Include="regs.h" />
+    <ClInclude Include="shv-vmx.h" />
+    <ClInclude Include="stdint.h" />
     <ClInclude Include="vmm.h" />
     <ClInclude Include="vmx.h" />
+    <ClInclude Include="vtd.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="savestate.s">

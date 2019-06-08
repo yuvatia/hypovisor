@@ -1,7 +1,8 @@
 #pragma once
 #include <wdm.h>
 
-#pragma warning(disable : 4214)
+#pragma warning(disable:4201)
+#pragma warning(disable:4214)
 
 #define MAX_NUM_OF_PAGES    0x20000
 #define EPTE_READ       0x1
@@ -30,102 +31,122 @@
 #define EPTE_MT_SHIFT   3
 #define EPT_LEVELS      4
 
+typedef struct _VMX_EPTP
+{
+	union
+	{
+		struct
+		{
+			UINT64 Type : 3;
+			UINT64 PageWalkLength : 3;
+			UINT64 EnableAccessAndDirtyFlags : 1;
+			UINT64 Reserved : 5;
+			UINT64 PageFrameNumber : 36;
+			UINT64 ReservedHigh : 16;
+		};
+		UINT64 AsUlonglong;
+	};
+} VMX_EPTP, EPTP, *PVMX_EPTP, *PEPTP;
 
+typedef struct _VMX_EPML4E
+{
+	union
+	{
+		struct
+		{
+			UINT64 Read : 1;
+			UINT64 Write : 1;
+			UINT64 Execute : 1;
+			UINT64 Reserved : 5;
+			UINT64 Accessed : 1;
+			UINT64 SoftwareUse : 1;
+			UINT64 UserModeExecute : 1;
+			UINT64 SoftwareUse2 : 1;
+			UINT64 PageFrameNumber : 36;
+			UINT64 ReservedHigh : 4;
+			UINT64 SoftwareUseHigh : 12;
+		};
+		UINT64 AsUlonglong;
+	};
+} VMX_EPML4E, *PVMX_EPML4E;
 
+typedef struct _VMX_HUGE_PDPTE
+{
+	union
+	{
+		struct
+		{
+			UINT64 Read : 1;
+			UINT64 Write : 1;
+			UINT64 Execute : 1;
+			UINT64 Type : 3;
+			UINT64 IgnorePat : 1;
+			UINT64 Large : 1;
+			UINT64 Accessed : 1;
+			UINT64 Dirty : 1;
+			UINT64 UserModeExecute : 1;
+			UINT64 SoftwareUse : 1;
+			UINT64 Reserved : 18;
+			UINT64 PageFrameNumber : 18;
+			UINT64 ReservedHigh : 4;
+			UINT64 SoftwareUseHigh : 11;
+			UINT64 SupressVme : 1;
+		};
+		UINT64 AsUlonglong;
+	};
+} VMX_HUGE_PDPTE, *PVMX_HUGE_PDPTE;
 
+typedef struct _VMX_PDPTE
+{
+	union
+	{
+		struct
+		{
+			UINT64 Read : 1;
+			UINT64 Write : 1;
+			UINT64 Execute : 1;
+			UINT64 Reserved : 5;
+			UINT64 Accessed : 1;
+			UINT64 SoftwareUse : 1;
+			UINT64 UserModeExecute : 1;
+			UINT64 SoftwareUse2 : 1;
+			UINT64 PageFrameNumber : 36;
+			UINT64 ReservedHigh : 4;
+			UINT64 SoftwareUseHigh : 12;
+		};
+		UINT64 AsUlonglong;
+	};
+} VMX_PDPTE, *PVMX_PDPTE;
 
-// See Table 24-8. Format of Extended-Page-Table Pointer
-typedef union _EPTP {
-	ULONG64 All;
-	struct {
-		UINT64 MemoryType : 3; // bit 2:0 (0 = Uncacheable (UC) - 6 = Write - back(WB))
-		UINT64 PageWalkLength : 3; // bit 5:3 (This value is 1 less than the EPT page-walk length) 
-		UINT64 DirtyAndAceessEnabled : 1; // bit 6  (Setting this control to 1 enables accessed and dirty flags for EPT)
-		UINT64 Reserved1 : 5; // bit 11:7 
-		UINT64 PML4Address : 36;
-		UINT64 Reserved2 : 16;
-	}Fields;
-}EPTP, *PEPTP;
+typedef struct _VMX_LARGE_PDE
+{
+	union
+	{
+		struct
+		{
+			UINT64 Read : 1;
+			UINT64 Write : 1;
+			UINT64 Execute : 1;
+			UINT64 Type : 3;
+			UINT64 IgnorePat : 1;
+			UINT64 Large : 1;
+			UINT64 Accessed : 1;
+			UINT64 Dirty : 1;
+			UINT64 UserModeExecute : 1;
+			UINT64 SoftwareUse : 1;
+			UINT64 Reserved : 9;
+			UINT64 PageFrameNumber : 27;
+			UINT64 ReservedHigh : 4;
+			UINT64 SoftwareUseHigh : 11;
+			UINT64 SupressVme : 1;
+		};
+		UINT64 AsUlonglong;
+	};
+} VMX_LARGE_PDE, *PVMX_LARGE_PDE;
 
-
-
-// See Table 28-1. 
-typedef union _EPT_PML4E {
-	ULONG64 All;
-	struct {
-		UINT64 Read : 1; // bit 0
-		UINT64 Write : 1; // bit 1
-		UINT64 Execute : 1; // bit 2
-		UINT64 Reserved1 : 5; // bit 7:3 (Must be Zero)
-		UINT64 Accessed : 1; // bit 8
-		UINT64 Ignored1 : 1; // bit 9
-		UINT64 ExecuteForUserMode : 1; // bit 10
-		UINT64 Ignored2 : 1; // bit 11
-		UINT64 PhysicalAddress : 36; // bit (N-1):12 or Page-Frame-Number
-		UINT64 Reserved2 : 4; // bit 51:N
-		UINT64 Ignored3 : 12; // bit 63:52
-	}Fields;
-}EPT_PML4E, *PEPT_PML4E;
-
-
-
-// See Table 28-3
-typedef union _EPT_PDPTE {
-	ULONG64 All;
-	struct {
-		UINT64 Read : 1; // bit 0
-		UINT64 Write : 1; // bit 1
-		UINT64 Execute : 1; // bit 2
-		UINT64 Reserved1 : 5; // bit 7:3 (Must be Zero)
-		UINT64 Accessed : 1; // bit 8
-		UINT64 Ignored1 : 1; // bit 9
-		UINT64 ExecuteForUserMode : 1; // bit 10
-		UINT64 Ignored2 : 1; // bit 11
-		UINT64 PhysicalAddress : 36; // bit (N-1):12 or Page-Frame-Number
-		UINT64 Reserved2 : 4; // bit 51:N
-		UINT64 Ignored3 : 12; // bit 63:52
-	}Fields;
-}EPT_PDPTE, *PEPT_PDPTE;
-
-
-// See Table 28-5
-typedef union _EPT_PDE {
-	ULONG64 All;
-	struct {
-		UINT64 Read : 1; // bit 0
-		UINT64 Write : 1; // bit 1
-		UINT64 Execute : 1; // bit 2
-		UINT64 Reserved1 : 5; // bit 7:3 (Must be Zero)
-		UINT64 Accessed : 1; // bit 8
-		UINT64 Ignored1 : 1; // bit 9
-		UINT64 ExecuteForUserMode : 1; // bit 10
-		UINT64 Ignored2 : 1; // bit 11
-		UINT64 PhysicalAddress : 36; // bit (N-1):12 or Page-Frame-Number
-		UINT64 Reserved2 : 4; // bit 51:N
-		UINT64 Ignored3 : 12; // bit 63:52
-	}Fields;
-}EPT_PDE, *PEPT_PDE;
-
-// See Table 28-6
-typedef union _EPT_PTE {
-	ULONG64 All;
-	struct {
-		UINT64 Read : 1; // bit 0
-		UINT64 Write : 1; // bit 1
-		UINT64 Execute : 1; // bit 2
-		UINT64 EPTMemoryType : 3; // bit 5:3 (EPT Memory type)
-		UINT64 IgnorePAT : 1; // bit 6
-		UINT64 Ignored1 : 1; // bit 7
-		UINT64 AccessedFlag : 1; // bit 8	
-		UINT64 DirtyFlag : 1; // bit 9
-		UINT64 ExecuteForUserMode : 1; // bit 10
-		UINT64 Ignored2 : 1; // bit 11
-		UINT64 PhysicalAddress : 36; // bit (N-1):12 or Page-Frame-Number
-		UINT64 Reserved : 4; // bit 51:N
-		UINT64 Ignored3 : 11; // bit 62:52
-		UINT64 SuppressVE : 1; // bit 63
-	}Fields;
-}EPT_PTE, *PEPT_PTE;
+static_assert(sizeof(VMX_EPTP) == sizeof(UINT64), "EPTP Size Mismatch");
+static_assert(sizeof(VMX_EPML4E) == sizeof(UINT64), "EPML4E Size Mismatch");
+static_assert(sizeof(VMX_PDPTE) == sizeof(UINT64), "EPDPTE Size Mismatch");
 
 
 enum invept_t
@@ -140,3 +161,9 @@ typedef struct INVEPT_DESC
 	EPTP ept_pointer;
 	UINT64  reserved;
 }INVEPT_DESC, *PINVEPT_DESC;
+
+
+// Note: state is actually of type PVirtualMachineState, but I don't really feel like solving that #include hell just yet.
+VOID vmx_ept_initialize(void* state);
+UINT32 vmx_mtrr_adjust_effective_memory_type(void* state, _In_ UINT64 LargePageAddress, _In_ UINT32 CandidateMemoryType);
+VOID vmx_mtrr_initialize(void* state);
