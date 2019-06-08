@@ -401,10 +401,10 @@ enum {
 * 12-63: Context Ptr (12 - (haw-1))
 * 64-127: Reserved
 */
-struct root_entry {
+typedef struct _root_entry {
 	u64     lo;
 	u64     hi;
-};
+} root_entry;
 
 /*
 * low 64 bits:
@@ -417,7 +417,7 @@ struct root_entry {
 * 3-6: aval
 * 8-23: domain id
 */
-struct context_entry {
+typedef struct _context_entry {
 	u64 lo;
 	u64 hi;
-};
+} context_entry;

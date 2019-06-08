@@ -1,7 +1,6 @@
 #include "acpi.h"
 #include <Aux_klib.h> // Include ordering is important
 #include "vtd.h"
-#include "intel-iommu.h"
 #include "memory.h"
 
 #define DMAR_SIGNATURE 'RAMD'
@@ -45,9 +44,19 @@ void enable_translation() {
 void set_root_table(void* ept_pml4_va) {
 	UINT64 pml4_pa = virtual_to_physical(ept_pml4_va);
 
+	for (int i = 0; i < 0x100; ++i) {
+		g_context_entry[i].hi = 0b10; // AW (48-bit, 4-level page table)
+		g_context_entry[i].lo = (1 << 0) | pml4_pa; // PRESENT | SLPTPTR, TT is implied to 0b00.
+	}
+	
+	for (int i = 0; i < 0x100; ++i) {
+		g_root_entry[i].hi = 0;
+		g_root_entry[i].lo = (1 << 0) | (virtual_to_physical(&g_context_entry)); // PRESENT | CTP
+	}
+
 	// Use Legacy-Mode translation.
 	UINT64 root_table = 0;
-	root_table = (pml4_pa >> 12) << 12;
+	root_table = (virtual_to_physical(&g_root_entry) >> 12) << 12;
 	*(UINT64*)(g_vtdbar + DMAR_RTADDR_REG) = root_table;
 
 	// Reset one-shot bytes
