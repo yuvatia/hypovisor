@@ -13,7 +13,6 @@ unsigned long long get_vtdbar() {
 	unsigned long tableSize = 0;
 	NTSTATUS status = 0;
 
-	__debugbreak();
 	status = AuxKlibGetSystemFirmwareTable('ACPI', DMAR_SIGNATURE, NULL, 0, &tableSize);
 
 	AcpiTableDmar* table = (AcpiTableDmar*)ExAllocatePoolWithTag(NonPagedPool, tableSize, DMAR_SIGNATURE);
@@ -27,7 +26,6 @@ unsigned long long get_vtdbar() {
 
 	ExFreePoolWithTag(table, DMAR_SIGNATURE);
 
-	__debugbreak();
 	g_vtdbar = (char*)map_physical_memory(vtdbar, 0x1000);
 	return vtdbar;
 }
@@ -42,7 +40,7 @@ void enable_translation() {
 		;
 	}
 
-	DbgPrint("[*] Enabled DMAR.\n");
+	DbgPrint("[*] Enabled DMAR translation.\n");
 }
 
 void set_root_table(void* ept_pml4_va) {
