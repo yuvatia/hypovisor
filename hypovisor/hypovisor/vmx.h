@@ -324,7 +324,7 @@ enum VMCS_FIELDS {
 #define VMM_STACK_SIZE      0x8000
 #define RPL_MASK                3
 
-VOID VMXSaveState(IN ULONG ProcessorID);
+VOID VMXSaveState(IN ULONG ProcessorID, PEPTP eptp);
 VOID VMXRestoreState(VOID);
 VOID VMExitHandler(VOID);
 

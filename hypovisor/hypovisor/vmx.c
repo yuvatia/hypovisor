@@ -17,7 +17,7 @@ void enable_vmx_in_cr4();
 
 PVirtualMachineState g_vm_state;
 
-BOOLEAN run_on_processor(ULONG num, PFUNC routine)
+BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine)
 {
 	KIRQL old_irql;
 
@@ -25,7 +25,7 @@ BOOLEAN run_on_processor(ULONG num, PFUNC routine)
 
 	old_irql = KeRaiseIrqlToDpcLevel();
 
-	routine(num); // Invoke callback routine
+	routine(num, eptp); // Invoke callback routine
 
 	KeLowerIrql(old_irql);
 
@@ -41,7 +41,7 @@ int virtualize_cores() {
 
 	ULONG processor_count = KeQueryActiveProcessorCount(0);
 	for (ULONG i = 0; i < processor_count; ++i) {
-		run_on_processor(i, VMXSaveState); // VmxSaveState will also virtualize the core.
+		run_on_processor(i, 0, VMXSaveState); // VmxSaveState will also virtualize the core.
 	}
 
 	return STATUS_SUCCESS;
@@ -161,10 +161,11 @@ int is_vmx_supported()
 }
 
 
-void VirtualizeCurrentSystem(int processor_id, PVOID guest_stack);
+void VirtualizeCurrentSystem(int processor_id, PEPTP eptp, PVOID guest_stack);
 #pragma alloc_text(PAGE, VirtualizeCurrentSystem)
 
-void VirtualizeCurrentSystem(int processor_id, PVOID guest_stack) {
+void VirtualizeCurrentSystem(int processor_id, PEPTP eptp, PVOID guest_stack) {
+	UNREFERENCED_PARAMETER(eptp);
 
 	DbgPrint("\n======================== Virtualizing Current System =============================\n");
 
