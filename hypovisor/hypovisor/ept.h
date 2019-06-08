@@ -162,8 +162,29 @@ typedef struct INVEPT_DESC
 	UINT64  reserved;
 }INVEPT_DESC, *PINVEPT_DESC;
 
+#define PML4E_ENTRY_COUNT   512
+#define PDPTE_ENTRY_COUNT   512
+#define PDE_ENTRY_COUNT     512
 
-// Note: state is actually of type PVirtualMachineState, but I don't really feel like solving that #include hell just yet.
+typedef struct _SHV_MTRR_RANGE
+{
+	UINT32 Enabled;
+	UINT32 Type;
+	UINT64 PhysicalAddressMin;
+	UINT64 PhysicalAddressMax;
+} SHV_MTRR_RANGE, *PSHV_MTRR_RANGE;
+
+typedef struct _ept_context
+{
+	SHV_MTRR_RANGE MtrrData[16];
+	DECLSPEC_ALIGN(PAGE_SIZE) VMX_EPML4E Epml4[PML4E_ENTRY_COUNT];
+	DECLSPEC_ALIGN(PAGE_SIZE) VMX_PDPTE Epdpt[PDPTE_ENTRY_COUNT];
+	DECLSPEC_ALIGN(PAGE_SIZE) VMX_LARGE_PDE Epde[PDPTE_ENTRY_COUNT][PDE_ENTRY_COUNT];
+} ept_context, *pept_context;
+
+pept_context g_ept_ctx;
+
+// Note: state is actually of type pept_context, but I don't really feel like solving that #include hell just yet.
 VOID vmx_ept_initialize(void* state);
 UINT32 vmx_mtrr_adjust_effective_memory_type(void* state, _In_ UINT64 LargePageAddress, _In_ UINT32 CandidateMemoryType);
 VOID vmx_mtrr_initialize(void* state);

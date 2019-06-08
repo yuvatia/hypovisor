@@ -5,6 +5,10 @@
 
 #define DMAR_SIGNATURE 'RAMD'
 
+char* g_vtdbar;
+DECLSPEC_ALIGN(PAGE_SIZE) root_entry g_root_entry[0x100];
+DECLSPEC_ALIGN(PAGE_SIZE) context_entry g_context_entry[0x100];
+
 unsigned long long get_vtdbar() {
 	unsigned long tableSize = 0;
 	NTSTATUS status = 0;

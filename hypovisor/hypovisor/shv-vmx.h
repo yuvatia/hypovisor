@@ -262,7 +262,3 @@ C_ASSERT(sizeof(MTRR_VARIABLE_MASK) == sizeof(UINT64));
 
 #define GUEST_ACTIVITY_ACTIVE           0
 #define GUEST_ACTIVITY_HLT              1
-
-#define PML4E_ENTRY_COUNT   512
-#define PDPTE_ENTRY_COUNT   512
-#define PDE_ENTRY_COUNT     512

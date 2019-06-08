@@ -7,6 +7,7 @@
 #include "msr.h"
 #include "memory.h"
 #include "regs.h"
+#include "vtd.h"
 
 void initialize_vmx();
 int is_vmx_supported();
@@ -38,6 +39,18 @@ BOOLEAN run_on_processor(ULONG num, PEPTP eptp, PFUNC routine)
 int virtualize_cores() {
 	// TODO: check for ept support
 	initialize_vmx();
+
+	g_ept_ctx = ExAllocatePoolWithTag(NonPagedPool, sizeof(ept_context), POOLTAG);
+	DbgPrint("[*] Initializing MTRR\n");
+	vmx_mtrr_initialize(g_ept_ctx);
+	DbgPrint("[*] Initializing EPT\n");
+	vmx_ept_initialize(g_ept_ctx);
+	DbgPrint("[*] Initialing DMAR\n");
+	get_vtdbar();
+	DbgPrint("[*] Setting RTADR_REG\n");
+	set_root_table(g_ept_ctx->Epml4);
+	DbgPrint("[*] Enabling DMAR Legacy-Mode translation...\n");
+	enable_translation();
 
 	ULONG processor_count = KeQueryActiveProcessorCount(0);
 	for (ULONG i = 0; i < processor_count; ++i) {
@@ -340,11 +353,6 @@ BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, PVOID gue
 	BOOLEAN Status = FALSE;
 	VMX_EPTP vmxEptp = { 0 };
 
-	DbgPrint("[*] Initializing MTRR\n");
-	vmx_mtrr_initialize(vm_state);
-	DbgPrint("[*] Initializing EPT\n");
-	vmx_ept_initialize(vm_state);
-
 	// Load Extended Page Table Pointer
 	//
 	// Enable EPT features if supported
@@ -357,7 +365,7 @@ BOOLEAN setup_vmcs_for_current_guest(IN PVirtualMachineState vm_state, PVOID gue
 		vmxEptp.AsUlonglong = 0;
 		vmxEptp.PageWalkLength = 3;
 		vmxEptp.Type = MTRR_TYPE_WB;
-		vmxEptp.PageFrameNumber = virtual_to_physical(vm_state->Epml4) / PAGE_SIZE;
+		vmxEptp.PageFrameNumber = virtual_to_physical(g_ept_ctx->Epml4) / PAGE_SIZE;
 
 		//
 		// Load EPT Root Pointer
